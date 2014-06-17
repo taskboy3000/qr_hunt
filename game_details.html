@@ -1,0 +1,687 @@
+<style type="text/css">
+.game-header
+{
+  background-color: #666;
+  color: #eee;
+  font-size: 120%;
+  letter-spacing: 0.2em;
+  font-weight: bold;
+  font-variant: small-caps;
+  padding: 10px;
+}
+</style>
+<div>
+  <p class="game-header">Metainformation</p>
+  <table class="table" class="game-meta">
+    <thead>
+      <tr>
+        <th>Start date</th>
+        <th>Start date</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="meta-start-date"></td>
+	<td><span class="meta-end-date"></td>
+	<td>
+	  <a class="btn btn-primary" href="#" data-target="#modal-edit-game" role="button" data-toggle="modal" data-game-id="" class="btn btn-primary btn-large" data-tag="edit-game">Edit</a>
+	  <a class="btn btn-primary" href="#modal-game-stats" data-target="#modal-game-stats" role="button" data-toggle="modal" data-game-id="" data-tag="game-stats">Stats</a>
+	  <a class="btn btn-primary" href="#" data-tag="download" data-target="#modal-download" role="button" data-toggle="modal" data-game-id="">Download</a>
+	  <a class="btn btn-danger" href="#" data-tag="delete-game" data-game-id="">Delete</a>
+	</td>
+      </tr>
+    </tbody>
+  </table>  
+    
+  <p class="game-header">Steps</p>
+  <div class="game-steps">
+     <table class="table steps-list">
+      <thead>
+        <th>ID</th>
+        <th>Title</th>
+        <th>URL</th>
+	<th>Sequence</th>
+	<th>Exclusive group</th>
+	<th>Dependencies</th>
+	<th>Actions</th>
+      </thead>
+      <tbody></tbody>
+     </table>
+     <p><a href="#" role="button" data-toggle="modal" data-target=".modal-edit-step" class="btn btn-primary" id="btnAddStep" data-game-id="" data-tag="edit-step">Add step</a></p>
+  </div>
+
+  <div class="modal-edit-step modal hide fade" tabindex="-1" data-tag="edit-step-modal" role="dialog" aria-hidden="true">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+      <h3>Edit Step</h3>
+    </div>    
+    <div class="modal-body">
+      <form name="editStep" method="POST">
+        <input type="hidden" name="step_id">
+        <input type="hidden" name="program_id">
+
+        <p><b>Basic Information</b></p>
+
+        <label for="title">Title:</label>
+        <input type="text" name="title" placeholder="My Awesome link...">
+        <span class="help-block">A title to identify this link for you and your readers</span>
+    
+        <label for="url">* URL:</label>
+        <input required="required" type="text" name="url" placeholder="http://...">
+        <span class="help-block">This is the item that the QR code will point to</span>
+
+        <label for="seq">* Sequence:</label>
+        <input required="required" type="text" size="4" name="seq" placeholder="1">
+        <span class="help-block">This is the order that this link appears in your game.  Should be an integer</span>
+
+        <p>* indicates a required field</p>
+
+        <label for="error_url">Error URL:</label>
+        <input type="text" name="error_url">
+        <span class="help-block">Send players to this URL if a dependency or exclusive choice rule is violoted.</span>
+
+        <hr>
+
+        <p><b>Access Control</b></p>
+
+        <label for="exclusive_group">Make this part of an exclusive choice group:</label>
+        <select name="exclusive_group">
+          <option value="">-- Not part of any group --</option>
+          <option value="*create*">-- Create a new group --</option>
+        </select> 
+        <div class="new-exclusive-group" style="display:none">
+          <label for="new_exclusive_group">Create a new group for this link:</label>
+          <input type="text" name="new_exclusive_group">
+        </div>
+        <span class="help-block">Makes this link one of a set of exclusive choices presented to the players.</span>
+    
+        <label for="dependencies[]">Require these links first:</label>
+        <table class="table" id="step-edit-required">
+          <thead>
+            <th></th>
+	    <th>Title</th>
+	    <th>URL</th>
+	    <th>Sequence</th>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <span class="help-block">Before users can see this link, they must first see the following</span>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+       <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+       <button id="btnSave" class="btn btn-primary">Save changes</button>
+    </div>
+  </div>
+
+  <div class="modal hide fade" tabindex="-1" data-tag="modal-download" role="dialog" aria-hidden="true" id="modal-download">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+      <h3>Download QR Codes</h3>
+    </div>    
+
+    <div class="modal-body">
+      <p>It may take a few minutes to generate the archive with your QR codes.</p>
+      <span id="download-file"><img src="/img/loading.gif" alt="Loading..."></span>
+    </div>
+
+    <div class="modal-footer">
+       <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+    </div>
+  </div>
+
+  <div id="modal-game-stats" class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+      <h3>Game statistics</h3>
+    </div>    
+    <div class="modal-body">
+    <p class="game-header">Players</p>
+    <p>Numbers of sessions started by players for this game.<p>
+    <table class="table" id="stats-users">
+      <thead>
+        <tr>
+          <th>Today</th>
+          <th>Yesterday</th>
+          <th>Last week</th>
+          <th>Lifetime</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+	  <td data-tag="today" style="font-family:Courier"></td>
+	  <td data-tag="yesterday" style="font-family:Courier"></td>
+	  <td data-tag="last_week" style="font-family:Courier"></td>
+	  <td data-tag="lifetime" style="font-family:Courier"></td>
+	</tr>
+      </tbody>
+    </table>
+
+    <p class="game-header">Links served</p>
+    <p>Total number of links served to players of this game.</p>
+    <table class="table" id="stats-links">
+      <thead>
+        <tr>
+          <th>Today</th>
+          <th>Yesterday</th>
+          <th>Last week</th>
+          <th>Lifetime</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+	  <td data-tag="today" style="font-family:Courier"></td>
+	  <td data-tag="yesterday" style="font-family:Courier"></td>
+	  <td data-tag="last_week" style="font-family:Courier"></td>
+	  <td data-tag="lifetime" style="font-family:Courier"></td>
+	</tr>
+      </tbody>
+    </table>
+
+    <p class="game-header">Sessions</p>
+    <div id="stats-by-session">
+      <table class="table">
+        <thead></thead>
+	<tbody></tbody>
+      </table>
+    </div>
+
+
+    </div>
+    <div class="modal-footer">
+       <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+    </div>
+  </div>
+
+  
+</div>
+
+<script type="text/javascript">
+$(document).ready(function(){
+
+gameDetailsObject = new function()
+{
+     this.game_id = 0;
+
+     this.init = function(this_game_id)
+     {
+        this.game_id = this_game_id;
+	if (!this.game_id)
+	{ 
+          if (window.qr_hunt && window.qr_hunt.game_details)
+	  {
+	     this.game_id = window.qr_hunt.game_details.game_id;
+	  }	   
+	}
+        var game_id = this.game_id;
+
+	if (!game_id)
+	{
+	   console.log("->No game ID");
+	   return;
+	}
+	
+	$("a[data-game-id]").attr("data-game-id", game_id);
+	
+	$("a[data-tag=delete-game]").off('click').click(function(e)
+	{
+	  e.preventDefault();
+	  console.log("Delete game: " + $(this).attr("data-game-id"));
+	  if (confirm("Delete this game?"))
+	  {
+	    console.log("Confirmed");
+	    
+	    $.ajax({
+	              data: { action: "delete_game", program_id: gameDetailsObject.game_id },
+		      success: function(d)
+		      {
+		         if (d.error)
+                         {
+		           alert(d.error);
+			 }
+			 else
+			 {
+			    alert("Game deleted");
+			 }
+		      },
+	           });
+	  }
+	  return false;
+	});
+
+	$.ajax({
+		data: { action: "get_game", id: game_id},
+	        success: function(d) {
+		           if (d.game)
+		           {
+			      gameDetailsObject.refresh_meta(d.game);
+		              gameDetailsObject.refresh_steps(d.steps);
+		           }
+			   else
+			   {
+   			      alert(d.error);
+			   }			   
+		          }
+			  
+	});
+
+	$("#modal-download").on("shown", function()
+	{
+	   $.ajax({
+	            data: { program_id: gameDetailsObject.game_id, action: "download" },
+		    success: function(d)
+		    {
+		       if (d.error)
+		       {
+		          alert(d.error);
+		       }
+		       else
+		       {
+		          $("#download-file").html("<a href=\"" + d.url + "\">" + d.url + "</a>");
+		       }
+		    }
+	          });
+	});
+     };
+
+     this.refresh_meta = function(meta)
+     {
+        if (!meta)
+	{
+	   return;
+	}
+
+	$("button[data-tag=open-game-details][data-id=" + meta.id + "]").text(meta.name);
+
+	if (meta.start_date)
+	{
+	   $(".meta-start-date").html(meta.start_date);
+	}
+	else
+	{
+	   $(".meta-start-date").html("<i>none</i>");
+	}
+
+	if (meta.end_date)
+	{
+	   $(".meta-end-date").html(meta.end_date);
+	}
+	else
+	{
+	   $(".meta-end-date").html("<i>none</i>");
+	}
+	
+	// update the form
+	$("form[name=edit-game]").find("input[name=program_id]").val(meta.id);
+	$("form[name=edit-game]").find("input[name=name]").val(meta.name);
+	$("form[name=edit-game]").find("input[name=start_date]").val(meta.start_date);
+	$("form[name=edit-game]").find("input[name=end_date]").val(meta.end_date);
+     };
+     
+
+     this.refresh_steps = function(steps)
+     {
+       if (!steps)
+       {
+          return;
+       }
+       $("table.steps-list").find("tbody").empty();
+
+       for (var i=0; i < steps.length; i++)
+       {
+          var rec = steps[i];
+	  var s = "<tr>";
+          
+          s = s + "<td>" + rec.id + "</td>";
+	  var t = rec.title;
+	  if (!t)
+	  {
+	     t = "<i>none</i>";
+	  }
+	  else
+	  {
+	    short = t;
+	    if (short.length > 35)
+	    { 
+	        short = short.substr(0,32) + "...";
+	    }
+	    t = "<abbr title=\"" + t + "\">" + short + "</abbr>";
+	  }
+
+	  s = s + "<td>" + t + "</td>";
+	  
+	  t = rec.param1;
+	  var anchor = t;
+	  if (anchor.length > 35)
+	  {
+	     anchor = anchor.substr(0,32) + "...";
+	  }
+
+	  s = s + "<td><a target=\"_blank\" href=\""
+	      + t + "\"" 
+	      + "title=\"" + t + "\">" 
+	      + anchor + "</a></td>";
+	  s = s + "<td>" + rec.seq + "</td>";
+	  var eg =  rec.exclusive_group_name;
+	  if (eg == null)
+	  {
+	     eg = "<i>none</i>";	  
+	  }
+	  s = s + "<td>" + eg + "</td>";
+	  var deps = rec.dependencies;
+	  s = s + "<td>" + (deps ? "yes" : "no") + "</td>";
+          s = s + "<td><a role=\"button\" data-toggle=\"modal\" data-target=\".modal-edit-step\" data-tag=\"edit-step\" data-id=\"" 
+	  + rec.id 
+	  + "\" class=\"btn btn-primary edit-step\">Edit</a>&nbsp;<button data-id=\""
+	  + rec.id
+	  + "\" class=\"btn btn-danger\" data-tag=\"delete-step\">Delete</button></td>";
+	  s = s + "</tr>";
+	  $("table.steps-list").find("tbody").append(s);  
+
+       }
+
+       $("button[data-tag=delete-step]").off('click').click(function(e)
+        {
+	  e.preventDefault();
+          if (confirm("Really delete this step?"))
+	  {
+	       console.log("Delete confirmed");
+	       	    $.ajax({
+	              data: { action: "delete_step", id: $(this).attr("data-id") },
+		      success: function(d)
+		      {
+		         if (d.error)
+                         {
+		           alert(d.error);
+			 }
+			 else
+			 {
+			    alert("Step deleted");
+			 }
+		      },
+	           });
+
+	  }
+	  return false;
+       });
+
+       $("a[data-tag=edit-step]").off('click').click(function(){
+          console.log("edit-step click handler");
+
+          var step_id = $(this).attr("data-id");
+	  // window.qr_hunt = { get_step : step_id };
+	  stepFormObject.init(step_id);
+       });
+
+       $("div[data-tag=edit-step-modal]").on("shown", function()
+       {
+          stepFormObject.paintForm();
+       });
+    
+       $("a[data-tag=game-stats]").off('click').click(function()
+       {
+          $.ajax({
+	     data: {id: gameDetailsObject.game_id, action: "get_quick_game_stats"},
+	     success: function(d)
+	     {
+		if (d.error)
+		{
+		   alert(d.error);
+		}
+		else
+		{
+		   var tables = ["users", "links"];
+		   var kinds = ["today", "yesterday", "last_week", "lifetime"];
+		   
+		   for (var t=0; t < tables.length; t++)
+		   {
+		      for (var k=0; k < kinds.length; k++)
+		      {
+		         var stat = tables[t] + "_" + kinds[k];
+		         $("#stats-" + tables[t]).find("td[data-tag=" + kinds[k] + "]").html(d.stats[stat]);
+		      }
+		   }
+		}
+	     }
+	  });
+	  
+	  $.ajax({
+	    data: {id: gameDetailsObject.game_id, action: "get_game_stats_for_sessions"},
+	    success: function(d)
+	    {
+              console.log(d);
+	      if (d.error)
+	      {
+	        alert(d.error);
+		return;
+	      }
+
+	      var step_headers = new Array();
+	      var thead = "<tr>";
+	      
+	      for (var i=0; i < d.stats.headers.length; i++)
+	      {
+	         thead = thead + "<th>" + d.stats.headers[i] + "</th>";
+		 if (i > 0)
+		 {
+		    step_headers.push(d.stats.headers[i]);
+		 }
+	      }
+
+	      thead = thead + "</tr>";
+	      $("#stats-by-session").find("thead").append(thead);
+
+	      for (var i=0; i < d.stats.sessions.length; i++)
+	      {
+                var tbody = "<tr><td>" + d.stats.sessions[i].session_id + "</td>";
+                for (var j=0; j < step_headers.length; j++)
+                {
+                  var n = d.stats.sessions[i][ step_headers[j] ];
+		  if (!n)
+		  {
+		    n = 0;
+		  }
+		  tbody = tbody + "<td>" + n + "</td>";
+		}
+
+	        tbody = tbody + "</tr>";
+                console.log(tbody);
+	        $("#stats-by-session").find("tbody").append(tbody);
+	      }
+	      
+	    }
+	  })
+	  
+       });
+
+       $("#btnAddStep").off('click').click(function() {
+         // ugly
+	 window.qr_hunt.get_step = null;
+       });
+
+       $("#btnSave").off('click').click(function()
+       {
+          stepFormObject.save();
+       });
+     
+     };
+  };
+  
+  var stepFormObject = new function()
+  {
+     var stepId = -1;
+
+     this.init = function(stepId)
+     {
+        console.log("init: " + stepId);
+        this.stepId = stepId;
+
+
+     }
+
+     this.paintForm = function()
+     {
+        console.log("paintForm");
+	  // Good place to clear out old values in the form
+	  $(".new-exclusive-group").val("").hide();
+	  $("table#step-edit-required").find("tbody").empty();
+          $("option[data-role=added]").remove();
+	  $("form[name=editStep]").find("input").val("");
+	  $("input[name=program_id]").val(gameDetailsObject.game_id);
+	  this.loadFirstData();
+     };
+
+     this.loadFirstData = function()
+     {
+            console.log("loadFirstData");
+	    $.ajax({
+	       data: { id: gameDetailsObject.game_id, action: "get_game" },
+	       success: function(d)
+	       {
+	         if (d.steps)
+	         {
+                   $("table#step-edit-required").find("tbody").empty();
+		   for (var i=0; i < d.steps.length; i++)
+		   {
+		     var rec = d.steps[i];
+		     var s = "<tr>";
+		     s = s + "<td><input name=\"dependencies[]\" type=\"checkbox\" value=\"" + rec.id + "\"></td>";
+		     s = s + "<td>" + rec.title + "</td>";
+		     s = s + "<td>" + rec.param1 + "</td>";
+		     s = s + "<td>" + rec.seq + "</td>";
+		     s = s + "</tr>";
+	             $("table#step-edit-required").find("tbody").append(s);
+		  }
+		  stepFormObject.loadNextData();		     
+	       }
+	     }
+	    });
+     };
+
+     this.loadNextData = function()
+     {
+       console.log("loadNextData");
+	    // Add exclusive group list
+	    $.ajax({
+		 data: { id: gameDetailsObject.game_id, action: "get_exclusive_groups_for_game"},
+		 success: function(d) {
+		   $("select[name=exclusive_group]").change(function()
+		   {
+		      var sel = $("select[name=exclusive_group] option:selected").val();
+		      if (sel == "*create*")
+		      {
+		        $(".new-exclusive-group").show();
+		      }
+		      else
+		      {
+		        $(".new-exclusive-group").hide();
+		      }
+		   });
+		   
+		   if (d.groups)
+		   {
+		      $("option[data-role=added]").remove();
+		      for (var i=0; i < d.groups.length; i++)
+		      {
+		         var rec = d.groups[i];
+			 var s = "<option data-role=\"added\" "
+			 + " value=\"" 
+			 + rec.id + "\">" 
+			 + rec.name + "</option>";
+			 $("select[name=exclusive_group]").append(s);
+		      }
+		     stepFormObject.loadLastData();		     
+		   }
+		 }
+	       });
+     }
+
+     this.loadLastData = function()
+     {
+	console.log("loadLastData: " + stepFormObject.stepId);
+
+	if (stepFormObject.stepId > 0)
+        {
+	    $.ajax({
+		   data: { id: stepFormObject.stepId, action: "get_step" },
+		   success: function(d) {
+		     if (d.step)
+		     {
+		        stepFormObject.refresh_step_form(d.step);
+		     }
+		   } 
+	         });	   
+         }
+     };
+
+     this.refresh_step_form = function(step)
+     {
+        console.log("refresh_step_form: " + step.id);
+        if (step.dependencies)
+        {
+	   var s = step.dependencies.split(",");
+           for (var i=0; i < s.length; i++)
+           {
+		var id = s[i];
+		$('input[name=dependencies\\[\\]][value=' + id + "]").attr("checked", "checked");
+	   }
+        }
+	
+	if (step.exclusive_group)
+	{
+	   $("select[name=exclusive_group]").attr("selected", "selected");
+	}
+
+	$("input[name=step_id]").val(step.id);
+	$("input[name=title]").val(step.title);
+	$("input[name=url]").val(step.param1);
+	$("input[name=error_url]").val(step.error_url);
+	$("input[name=seq]").val(step.seq);
+     };
+
+     this.save = function()
+     {
+        console.log("save");
+	   var deps = new Array();
+	   $('input[name=dependencies\\[\\]]:checked').each(function()
+	   {
+	      deps.push($(this).val());
+	   });
+
+	   var data = {
+	                 step_id : $("input[name=step_id]").val(),
+			 title: $("input[name=title]").val(),
+			 url : $("input[name=url]").val(),
+			 seq : $("input[name=seq]").val(),
+			 program_id: $("input[name=program_id]").val(),
+			 exclusive_group: $("select[name=exclusive_group] option:selected").val(),
+			 new_exclusive_group: $("input[name=new_exclusive_group]").val(),
+			 dependencies: deps,
+			 error_url: $("input[name=error_url]").val(),
+			 action: "save_step",			 
+	              };
+
+           console.log(data);
+	   $.ajax({
+	     data: data,
+	     success: function(d) {
+	       if (d.error)
+	       {
+	          alert(d.error);
+	       }
+	       else
+	       {
+	          gameDetailsObject.init(); // I know, right?
+		  $(".modal").modal("hide");
+	       }
+	     }
+	   });
+     };
+
+  };
+
+  gameDetailsObject.init();
+});
+</script>

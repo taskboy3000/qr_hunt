@@ -1,0 +1,31 @@
+<html>
+<head>
+<script src="/js/jquery.min.js"></script>
+<script src="/js/purl.js"></script>
+<style>
+body
+{
+  background-color: #66c;
+  font-size: 150%;
+}
+</style>
+<script>
+$(document).ready(function()
+{
+  var sid = $.url().param("session_id");
+  if (sid)
+  {
+    $("body div").append("<p>Player: " + sid + "</p>");
+  }
+});
+
+</script>
+</head>
+<body>
+  <div style="width:600px;margin-left:auto;margin-right:auto">
+  <h1>Welcome Badger!</h1>
+
+  <p>Good luck</p>
+  </div>
+</body>
+</html>

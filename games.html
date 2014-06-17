@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>QR Hunt :: Manage Your Games</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A treasure hunt parlor game using QR codes">
+    <meta name="author" content="Joe Johnston">
+
+    <link href="bootstrap/css/bootstrap.css" rel="stylesheet">
+    <link href="css/main.css" rel="stylesheet">
+  </head>
+  <body>
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="/">QR Hunt</a>
+          <div class="nav-collapse">
+            <ul class="nav">
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      <div class="leaderboard">
+        <h1>Manage Your Games</h1>
+	  <p class="lead">Welcome back, <span id="screen_name"></span></p>
+        </div>
+
+	<div id="list-games-wrapper">
+	  <table class="table table-hover" id="list-games">
+	     <thead>
+	        <tr>
+		  <th>Name</th>
+		  <th>Created</th>
+		  <th>Updated</th>
+		</tr>
+              </thead>
+	      <tbody></tbody>
+	  </table>
+	</div>
+
+	<p style="margin-top:20px;"><a href="#" data-target="#modal-edit-game" role="button" data-toggle="modal" data-game-id="" class="btn btn-primary btn-large" data-tag="create-game">Create New Game</a></p>
+
+	<div id="modal-edit-game" class="modal hide fade" role="dialog" aria-hidden="true">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            <h3>Edit Game</h3>
+          </div>    
+          <div class="modal-body">
+	     <form method="POST" name="edit-game">
+	       <input type="hidden" name="program_id">
+
+	       <label for="name">* Name:</label>
+	       <input type="text" name="name">
+	       <span class="help-block">The name of this game</span>
+
+	       <label for="start_date">Start date:</label>
+	       <input type="text" name="start_date" placeholder="YYYY-MM-DD">
+	       <span class="help-block">QR codes will not be resolved until this date</span>
+
+	       <label for="end_date">End date:</label>
+	       <input type="text" name="end_date" placeholder="YYYY-MM-DD">
+	       <span class="help-block">QR codes will not be resolved after this date</span>
+	       
+               <p>* indicates a required field</p>
+	     </form>
+	  </div>
+
+          <div class="modal-footer">
+            <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+            <button id="btnSaveGame" class="btn btn-primary">Save changes</button>
+          </div>
+	</div>
+
+        <hr>
+        <footer>
+          <p>&copy <a href="http://taskboy.com/">Taskboy.com</a></p>
+        </footer>
+      </div> <!-- /container -->
+      <script src="/js/jquery.min.js"></script>
+      <script src="/bootstrap/js/bootstrap.min.js"></script>
+      <script type="text/javascript">
+$(document).ready(function()
+{
+// This is the default for ALL ajax calls
+$.ajaxSetup({ cache: false, dataType: "json", url: "/api.pl" });  
+
+gameSelectObject = new function() 
+{
+    this.init = function()
+    {
+      $("a[data-tag=create-game]").off('click').click(function(e)
+      {
+         console.log("click: " + $("tr.collapse").attr("id"));
+	 $("tr.collapse").hide();
+         gameSelectObject.clear_edit_game_form();
+      });
+
+      $("#btnSaveGame").off('click').click(function(e)
+      {
+	   gameSelectObject.save_game_meta();
+      });
+    };
+
+    this.clear_edit_game_form = function()
+    {
+       $("form[name=edit-game]").find("input").val("");
+    };
+
+    this.save_game_meta = function()
+    {
+        var data = {
+	            action: "save_game_meta",
+	            program_id: $("form[name=edit-game]").find("input[name=program_id]").val(),
+		    name: $("form[name=edit-game]").find("input[name=name]").val(),
+		    start_date: $("form[name=edit-game]").find("input[name=start_date]").val(),
+	            end_date: $("form[name=edit-game]").find("input[name=end_date]").val(),
+	           };
+
+	$.ajax({
+	  data: data,
+	  success: function(d)
+          {
+	     if (d.error)
+	     {
+	       alert(d.error);
+	     }
+	     else
+	     {
+	          if (data.program_id)
+		  { 
+	            gameDetailsObject.init(data.program_id); 
+		    $(".modal").modal("hide");
+		  }
+		  else
+		  {
+		    location.reload();
+		  }
+	     }
+	  }
+	});
+    };
+
+    this.refresh = function()
+    {
+       $.ajax({ 
+		data: { user_id : authObject.user_id, action: "list_games" },
+		success: function(d)
+		{
+		   if (d && d.games)
+		   {
+		      var s = "";
+		      for (var i=0; i < d.games.length; i++)
+		      {
+		          var g = d.games[i];
+			  
+			  s = s + "<tr>"
+			      + "<td><button data-tag=\"open-game-details\" class=\"btn\" data-toggle=\"collapse\" data-target=\"meta-wrapper-"
+			      + g.id 
+			      + "\" data-id=\"" 
+			      + g.id + "\">" + g.name + "</button></td>"
+			      + "<td>" + g.created + "</td>"
+			      + "<td>" + g.updated + "</td>" 
+			      + "</tr>";
+
+			  s = s + "<tr class=\"collapse\" style=\"display:none\" id=\"meta-wrapper-" 
+			  + g.id + "\" data-id=\"" 
+			  + g.id + "\">" 
+			  + "<td colspan=\"3\"><div class=\"meta\" data-id=\"" + g.id + "\" ></div></td></tr>";
+		      }
+		      $("#list-games").find("tbody").append(s);
+		      
+		      $("#list-games").find("button[data-toggle=collapse]").off('click').click(function() 
+		      {
+		      	 var target =  $(this).attr("data-target");
+			 $("#" + target).toggle('fast',  function() {
+		            $("div.meta").empty();
+		            var game_id = $(this).attr("data-id");
+			    window.qr_hunt = { game_details : { game_id : game_id } };
+			    $("div.meta[data-id=" + game_id + "]").load("/game_details.html");
+		          });
+		      });
+		   }
+		}
+               });        
+    }
+    
+  };
+
+  var authObject = new function ()
+  {
+     var user_id = 0;
+     var twitter_id = 0;
+     var is_admin = 0;
+     var screen_name = "";
+
+     this.init = function()
+     {
+        $.ajax({
+		data: { action : "get_user" },
+		success : function (d) 
+		{
+		   if (d)
+		   {
+		     if (d.error)
+		     {
+		       window.location.href = "/index.html";
+		       return;
+		     }
+
+		     authObject.user_id = d.user.id;
+		     authObject.twitter_id = d.user.twitter_id;
+		     authObject.is_admin = d.user.is_admin;
+		     authObject.screen_name = d.user.screen_name;
+		     authObject.refresh();
+		     gameSelectObject.refresh();
+		   }
+		   else
+		   {
+		      window.location.href = "/index.html";
+		      return;
+		   }
+		   
+		}
+	       });
+     };
+     
+     this.refresh = function()
+     {
+        $("#screen_name").html(authObject.screen_name);
+     };
+  };
+
+  authObject.init();
+  gameSelectObject.init();
+
+})
+      </script>
+  </body>
+</html>
+            
